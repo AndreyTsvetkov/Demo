@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asc2Pnt", "Asc2Pnt\Asc2Pnt.csproj", "{19B74503-A333-46C2-9584-E9251BAEFA38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Util", "Util\Util.csproj", "{C8346EC4-478A-4EE6-B601-92FEC1403ADA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asc2PntTests", "Asc2PntTests\Asc2PntTests.csproj", "{5ECB79AD-8E8E-4161-B2CD-37E82DDC45CC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{19B74503-A333-46C2-9584-E9251BAEFA38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19B74503-A333-46C2-9584-E9251BAEFA38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19B74503-A333-46C2-9584-E9251BAEFA38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19B74503-A333-46C2-9584-E9251BAEFA38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8346EC4-478A-4EE6-B601-92FEC1403ADA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8346EC4-478A-4EE6-B601-92FEC1403ADA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8346EC4-478A-4EE6-B601-92FEC1403ADA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8346EC4-478A-4EE6-B601-92FEC1403ADA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5ECB79AD-8E8E-4161-B2CD-37E82DDC45CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ECB79AD-8E8E-4161-B2CD-37E82DDC45CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ECB79AD-8E8E-4161-B2CD-37E82DDC45CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ECB79AD-8E8E-4161-B2CD-37E82DDC45CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

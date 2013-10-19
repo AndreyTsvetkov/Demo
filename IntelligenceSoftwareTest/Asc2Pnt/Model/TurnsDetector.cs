@@ -4,9 +4,12 @@ using System.Linq;
 
 namespace Asc2Pnt.Model
 {
+	/// <summary>
+	/// Выявитель поворотов («углов»)
+	/// </summary>
 	public class TurnsDetector
 	{
-		private const int SleepForPointInDemoMode = 15;
+		private const int SleepPerPointInDemoMode = 15;
 		/// <summary>
 		/// Содержит основной алгоритм
 		/// </summary>
@@ -28,51 +31,49 @@ namespace Asc2Pnt.Model
 			 */
 
 			// текущий перечень ломаных
-			var fragments = new List<DiscretePointSequence>();
+			var allFragments = new List<DiscretePointSequence>();
 
 			// бросаем точки по одной, всё за один проход
 			foreach (var point in figure)
 			{
 				OnPointHandled(point);
-				if (DemoMode) System.Threading.Thread.Sleep(SleepForPointInDemoMode);
+				if (DemoMode) 
+					System.Threading.Thread.Sleep(SleepPerPointInDemoMode);
 
 				// находим, к каким фрагментам она может приклеиться
-				var fragmentsForPoint = fragments.Where(f => f.CanBeExtendedBy(point)).ToArray();
+				var fragmentsNearPoint = allFragments.Where(f => f.CanBeExtendedBy(point)).ToArray();
 				// если нет таких, она начинает новый фрагмент
-				if (!fragmentsForPoint.Any())
-					fragments.Add(new DiscretePointSequence(point));
+				if (!fragmentsNearPoint.Any())
+					allFragments.Add(new DiscretePointSequence(point));
 				else
 				{
-					// если есть, все (тут может быть 1 или 2 фрагмента) расширяем этой точкой; 
-					// p.s. for с индексом и Remove/Add взялись тут из-за функционального стиля объектов модели (например DiscretePointSequence), 
-					// они все неизменяемые, а этот общий алгоритм удобнее императивно сделать, из-за этого расхождения такой "мостик" 
-					for (int i = 0; i < fragmentsForPoint.Length; i++)
-					{
-						// заменяем фрагменты на расширенные
-						fragments.Remove(fragmentsForPoint[i]);
-						fragments.Add(fragmentsForPoint[i] = fragmentsForPoint[i].ExtendBy(point, OnTurnDetected));
-					}
-					// если все же два нашлось фрагмента, значит они склеются теперь
-					if (fragmentsForPoint.Length == 2)
+					// если смежные фрагменты есть (а их тут может быть или 1, или 2), 
+					fragmentsNearPoint = (from fragment in fragmentsNearPoint
+										  let extended = fragment.ExtendBy(point, OnTurnDetected) // то расширяем каждый фрагмент этой точкой; 
+										  let _ = fragment.Do(it => allFragments.Replace(it, extended)) // заменяем изменившиеся фрагменты в общем перечне; allFragments — единственная изменяемая коллекция, поэтому и побочный эффект возникает
+										  select extended)
+						.ToArray();
+
+					// если же два нашлось фрагмента, значит они склеются теперь
+					if (fragmentsNearPoint.Length == 2)
 					{
 						// останется в перечне первый, он вберет в себя  второй, который уйдет
-						var winnerFragment = fragmentsForPoint.First();
-						var looserFragment = fragmentsForPoint.Last();
-						fragments.Remove(winnerFragment);
-						fragments.Remove(looserFragment);
-						fragments.Add(winnerFragment.ExtendBy(looserFragment, OnTurnDetected));
+						var winnerFragment = fragmentsNearPoint.First();
+						var looserFragment = fragmentsNearPoint.Last();
+						allFragments.Replace(winnerFragment, winnerFragment.ExtendBy(looserFragment, OnTurnDetected));
+						allFragments.Remove(looserFragment);
 					}
 				}
 			}
 
 			// если на вход дали точки замкнутого контура, то останется только один фрагмент. его и берем
-			if (fragments.Count() == 1)
-				return fragments.Single().Turns;
+			if (allFragments.Count() == 1)
+				return allFragments.Single().Turns;
 			else
 				throw new ArgumentException("points do not form a closed fugure");
 
 			// p.s. для незамкнутого тоже работало бы:
-			//return fragments.SelectMany(_ => _.Turns).ToArray();
+			//return allFragments.SelectMany(_ => _.Turns).ToArray();
 		}
 
 		public bool DemoMode { get; set; }
@@ -100,6 +101,32 @@ namespace Asc2Pnt.Model
 		public DiscretePointEventArgs(DiscretePoint point)
 		{
 			Point = point;
+		}
+	}
+
+	internal static class ListEx
+	{
+		public static void Replace<T>(this List<T> list, T itemToRemove, T itemToAdd)
+		{
+			list.Remove(itemToRemove);
+			list.Add(itemToAdd);
+		}
+	}
+	internal static class FluentEx
+	{
+		/// <summary>
+		/// Выполняет переданный функтор, передавая туда целевой объект; 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="obj"></param>
+		/// <param name="action"></param>
+		/// <remarks>полезен для формирования fluent-цепочек, в частности, вставки побочных эффектов в код linq</remarks>
+		/// <returns>возвращает исходный объект</returns>
+		public static T Do<T>(this T obj, Action<T> action)
+		{
+			if (!ReferenceEquals(obj, null))
+				action(obj);
+			return obj;
 		}
 	}
 }

@@ -13,32 +13,29 @@ namespace Asc2Pnt
 			InitializeComponent();
 		}
 
-		public void ShowPoint(object sender, DiscretePointEventArgs e)
+		public void ShowPoint(DiscretePoint point)
 		{
-			_points.Add(e.Point);
-			const int padding = 10;
+			_points.Add(point);
 
-			var rectangle = GetRectangleForPoint(e.Point);
+			var rectangle = GetRectangleForPoint(point);
 
-			if (pnlDemo.Width < rectangle.X + rectangle.Width)
-				pnlDemo.Invoke((Action)(() => pnlDemo.Width = rectangle.X + rectangle.Width + padding));
-			if (pnlDemo.Height < rectangle.Y + rectangle.Height)
-				pnlDemo.Invoke((Action)(() => pnlDemo.Height = rectangle.Y + rectangle.Height + padding));
+			// это нужно для появления прокрутки на форме, чтобы вся картинка была доступна
+			pnlDemo.ExtendBoundsToInclude(rectangle);
 
 			pnlDemo.Invalidate(rectangle);
 		}
 
-		public void ShowTurn(object sender, DiscretePointEventArgs e)
+		public void ShowTurn(DiscretePoint point)
 		{
-			_turns.Add(e.Point);
-			pnlDemo.Invalidate(GetRectangleForPoint(e.Point));
+			_turns.Add(point);
+			pnlDemo.Invalidate(GetRectangleForPoint(point));
 		}
-
-		private readonly List<DiscretePoint> _points = new List<DiscretePoint>();
-		private readonly List<DiscretePoint> _turns = new List<DiscretePoint>();
 
 		private void pnlDemo_Paint(object sender, PaintEventArgs e)
 		{
+			// можно было бы не все точки перерисовывать, а лишь пересекающиеся с e.ClipRectangle, но пока что это была бы избыточная оптимизация;
+			// холст и так все рисование за границей этого прямоугольника игнорирует; 
+			// а вот то, что я инвалидирую только нужные кусочки — вот это сильно влияет на качество анимации в лучшую сторону.
 			_points.ForEach(point => e.Graphics.FillRectangle(Brushes.Black, GetRectangleForPoint(point)));
 			_turns.ForEach(point => e.Graphics.FillRectangle(Brushes.Red, GetRectangleForPoint(point)));
 		}
@@ -47,6 +44,21 @@ namespace Asc2Pnt
 		{
 			const int scale = 10;
 			return new Rectangle(point.X * scale, point.Y * scale, scale, scale);
+		}
+
+		private readonly List<DiscretePoint> _points = new List<DiscretePoint>();
+		private readonly List<DiscretePoint> _turns = new List<DiscretePoint>();
+	}
+
+	internal static class ControlEx
+	{
+		public static void ExtendBoundsToInclude(this Control ctrl, Rectangle rectangle)
+		{
+			const int padding = 10;
+			if (ctrl.Width < rectangle.X + rectangle.Width)
+				ctrl.Invoke((Action)(() => ctrl.Width = rectangle.X + rectangle.Width + padding));
+			if (ctrl.Height < rectangle.Y + rectangle.Height)
+				ctrl.Invoke((Action)(() => ctrl.Height = rectangle.Y + rectangle.Height + padding));
 		}
 	}
 }

@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<layerModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/SimpleShapesModel" dslVersion="1.0.0.0" Id="324b7a9b-3886-4f53-b68f-88ee68c125a9" xmlns="http://schemas.microsoft.com/VisualStudio/TeamArchitect/LayerDesigner">
+  <layers>
+    <layer Id="131e8ee5-5200-48f1-897f-52dc023cb283" name="&#xD;&#xA;Domain">
+      <references>
+        <reference Id="ce88a323-6d41-406f-9885-6b6f138b7ade" name="EspleyTest.Domain">
+          <ArtifactNode Label="EspleyTest.Domain" Category="CodeSchema_Project" Id="(Assembly=&quot;$(PersonalUri)/GitHub/Demo/EspleyTest/EspleyTest.Domain/EspleyTest.Domain.csproj&quot;)">
+            <Category Ref="File" />
+          </ArtifactNode>
+          <ExpandedNode Id="(Assembly=EspleyTest.Domain)" Label="EspleyTest.Domain.dll" Category="CodeSchema_Assembly">
+            <LinkCategory Ref="Produces" />
+            <LinkCategory Ref="Represents" />
+          </ExpandedNode>
+        </reference>
+      </references>
+    </layer>
+    <layer Id="2402317e-24c5-46ec-b28d-3355e914fd96" name="&#xD;&#xA;Grabber">
+      <dependencyToLayers>
+        <dependencyFromLayerToLayer Id="c46e0bd4-fac7-4b6c-ae11-25d5156920df" direction="Forward">
+          <layerMoniker Id="131e8ee5-5200-48f1-897f-52dc023cb283" />
+        </dependencyFromLayerToLayer>
+      </dependencyToLayers>
+      <references>
+        <reference Id="d227652f-feb2-4d3c-980e-1bb55f562433" name="EspleyTest.Grabber">
+          <ArtifactNode Label="EspleyTest.Grabber" Category="CodeSchema_Project" Id="(Assembly=&quot;$(PersonalUri)/GitHub/Demo/EspleyTest/EspleyTest.Grabber/EspleyTest.Grabber.csproj&quot;)">
+            <Category Ref="File" />
+          </ArtifactNode>
+          <ExpandedNode Id="(Assembly=EspleyTest.Grabber)" Label="EspleyTest.Grabber.dll" Category="CodeSchema_Assembly">
+            <LinkCategory Ref="Produces" />
+            <LinkCategory Ref="Represents" />
+          </ExpandedNode>
+        </reference>
+      </references>
+    </layer>
+    <layer Id="aa00fa49-f5be-41dc-8f8b-3414c5c6a280" name="&#xD;&#xA;Viewer">
+      <dependencyToLayers>
+        <dependencyFromLayerToLayer Id="5b17f8ed-485f-4d7b-8cc2-b296265e9a5b" direction="Forward">
+          <layerMoniker Id="131e8ee5-5200-48f1-897f-52dc023cb283" />
+        </dependencyFromLayerToLayer>
+      </dependencyToLayers>
+      <references>
+        <reference Id="1e63fe48-6e3b-4177-a237-623362434733" name="EspleyTest.Viewer">
+          <ArtifactNode Label="EspleyTest.Viewer" Category="CodeSchema_Project" Id="(Assembly=&quot;$(PersonalUri)/GitHub/Demo/EspleyTest/EspleyTest.Viewer/EspleyTest.Viewer.csproj&quot;)">
+            <Category Ref="File" />
+          </ArtifactNode>
+          <ExpandedNode Id="(Assembly=EspleyTest.Viewer)" Label="EspleyTest.Viewer.dll" Category="CodeSchema_Assembly">
+            <LinkCategory Ref="Produces" />
+            <LinkCategory Ref="Represents" />
+          </ExpandedNode>
+        </reference>
+      </references>
+    </layer>
+    <layer Id="0755390c-feaa-4395-a9c0-f9114b818cae" name="&#xD;&#xA;Storage">
+      <dependencyToLayers>
+        <dependencyFromLayerToLayer Id="884bf878-9d0a-4e39-a8a7-4dbce521cfa8" direction="Forward">
+          <layerMoniker Id="131e8ee5-5200-48f1-897f-52dc023cb283" />
+        </dependencyFromLayerToLayer>
+      </dependencyToLayers>
+      <references>
+        <reference Id="24c13046-00b3-46f8-813d-31c4fac943f1" name="EspleyTest.Storage">
+          <ArtifactNode Label="EspleyTest.Storage" Category="CodeSchema_Project" Id="(Assembly=&quot;$(PersonalUri)/GitHub/Demo/EspleyTest/EspleyTest.Storage/EspleyTest.Storage.csproj&quot;)">
+            <Category Ref="File" />
+          </ArtifactNode>
+          <ExpandedNode Id="(Assembly=EspleyTest.Storage)" Label="EspleyTest.Storage.dll" Category="CodeSchema_Assembly">
+            <LinkCategory Ref="Produces" />
+            <LinkCategory Ref="Represents" />
+          </ExpandedNode>
+        </reference>
+      </references>
+    </layer>
+  </layers>
+</layerModel>

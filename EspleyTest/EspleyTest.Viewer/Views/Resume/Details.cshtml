@@ -1,0 +1,7 @@
+﻿@model EspleyTest.Viewer.Controllers.ResumeDTO
+
+@{
+	ViewBag.Title = "Резюме: " + Model.ApplicantName;
+}
+
+@Html.Raw(Model.HtmlBody)

@@ -1,0 +1,16 @@
+﻿@model IEnumerable<EspleyTest.Viewer.Controllers.ResumeListItemDTO>
+
+@{
+	ViewBag.Title = "Перечень загруженных резюме";
+}
+
+<h2>Перечень загруженных резюме</h2>
+
+<ul>
+@foreach (var resume in Model)
+{
+	<li>
+		@Html.ActionLink(resume.ApplicantName, "Details", new { id = resume.ResumeId })
+	</li>
+}
+</ul>

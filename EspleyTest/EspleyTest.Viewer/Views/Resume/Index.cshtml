@@ -1,16 +1,44 @@
-﻿@model IEnumerable<EspleyTest.Viewer.Controllers.ResumeListItemDTO>
+﻿@using System.Globalization
+@model EspleyTest.Viewer.Controllers.ResumeListDTO
 
 @{
 	ViewBag.Title = "Перечень загруженных резюме";
 }
 
-<h2>Перечень загруженных резюме</h2>
+<h2 class="">Перечень загруженных резюме</h2>
 
-<ul>
-@foreach (var resume in Model)
+@helper Paging()
 {
-	<li>
-		@Html.ActionLink(resume.ApplicantName, "Details", new { id = resume.ResumeId })
-	</li>
+	<ul class="pagination">
+		@foreach (var page in Model.Pages)
+		{
+			<li class="@(Model.IsCurrent(page) ? "active" : "")">@Html.ActionLink((page + 1).ToString(CultureInfo.InvariantCulture), "Index", new {page})</li>
+		}
+	</ul>
 }
-</ul>
+
+@Paging()
+
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th>ФИО <span class="text-info">всего @Model.TotalCount</span></th>
+			<th>Последнее обновление</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var resume in Model.Items)
+		{
+			<tr>
+				<td>
+					@Html.ActionLink(resume.ApplicantName, "Details", new {id = resume.ResumeId})
+				</td>
+				<td>
+					@resume.LastUpdatedString
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+@Paging()

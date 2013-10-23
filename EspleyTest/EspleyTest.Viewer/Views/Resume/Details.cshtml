@@ -4,4 +4,9 @@
 	ViewBag.Title = "Резюме: " + Model.ApplicantName;
 }
 
-@Html.Raw(Model.HtmlBody)
+<h2 class="">@Model.ApplicantName</h2>
+@Html.ActionLink("← К списку", "Index")
+
+<div class="resume">
+	@Html.Raw(Model.HtmlBody)
+</div>

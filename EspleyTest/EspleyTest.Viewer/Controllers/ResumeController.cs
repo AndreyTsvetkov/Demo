@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Web.Mvc;
 using EspleyTest.Domain;
 using Util;
@@ -12,12 +13,14 @@ namespace EspleyTest.Viewer.Controllers
 			_resumeRepository = resumeRepository;
 		}
 
-	    private const int PageSize = 5;
+	    internal const int PageSize = 15;
         public ActionResult Index(int page = 0)
         {
-	        return View(_resumeRepository
-		                    .Load(skip: page*PageSize, take: PageSize)
-		                    .Select(ResumeListItemDTO.FromDomain));
+	        int totalCount;
+	        var items = _resumeRepository
+		        .Load(skip: page*PageSize, take: PageSize, totalCount: out totalCount)
+		        .Select(ResumeListItemDTO.FromDomain);
+	        return View(new ResumeListDTO(items, totalCount, page));
         }
 
         public ActionResult Details(int id)
@@ -31,14 +34,43 @@ namespace EspleyTest.Viewer.Controllers
 		private readonly IResumeRepository _resumeRepository;
 	}
 
+	public class ResumeListDTO
+	{
+		public readonly IEnumerable<ResumeListItemDTO> Items;
+		public readonly int TotalCount;
+		private readonly int _currentPage;
+
+		public ResumeListDTO(IEnumerable<ResumeListItemDTO> items, int totalCount, int currentPage)
+		{
+			Items = items;
+			TotalCount = totalCount;
+			_currentPage = currentPage;
+		}
+
+
+		public IEnumerable<int> Pages
+		{
+			get
+			{
+				int pagesCount = TotalCount/ResumeController.PageSize + (TotalCount%ResumeController.PageSize == 0 ? 0 : 1);
+				return Enumerable.Range(0, pagesCount);
+			}
+		}
+
+		public bool IsCurrent(int page)
+		{
+			return _currentPage == page;
+		}
+	}
 	public class ResumeListItemDTO
 	{
 		public string ApplicantName;
+		public string LastUpdatedString;
 		public int ResumeId;
 
 		public static ResumeListItemDTO FromDomain(Resume arg)
 		{
-			return new ResumeListItemDTO {ApplicantName = arg.ApplicantName, ResumeId = arg.Id};
+			return new ResumeListItemDTO {ApplicantName = arg.ApplicantName, ResumeId = arg.Id, LastUpdatedString = arg.LastUpdated.ToLongDateString()};
 		}
 	}
 
@@ -54,7 +86,7 @@ namespace EspleyTest.Viewer.Controllers
 
 		private static string FixImages(string html)
 		{
-			return html.Replace("src=\"/company/getimage", "src=\"http://myjob.uz/company/getimage");
+			return html.Replace("src=\"/", "src=\"http://myjob.uz/");
 		}
 	}
 }

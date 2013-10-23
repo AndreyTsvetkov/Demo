@@ -42,8 +42,9 @@ namespace EspleyTest.Storage
 			SaveChanges();
 		}
 
-		public IReadOnlyCollection<Resume> Load(int skip, int take)
+		public IReadOnlyCollection<Resume> Load(int skip, int take, out int totalCount)
 		{
+			totalCount = Resumes.Count();
 			return Resumes
 				.OrderByDescending(_ => _.LastUpdated)
 				.Skip(skip)

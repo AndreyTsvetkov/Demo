@@ -21,10 +21,11 @@ namespace EspleyTest.Grabber
 				if (cancellationToken.IsCancellationRequested)
 					break;
 
-			    var maybeExisting = _resumeRepository.Find(grabbedResume.Id);
-				if (maybeExisting.Select(existing => existing.LastUpdated < grabbedResume.LastUpdated).OrElse(true))
- 					_resumeRepository.Save(grabbedResume);
-		    }
+				if ((from existing in _resumeRepository.Find(grabbedResume.Id)
+				     select existing.LastUpdated < grabbedResume.LastUpdated)
+					.OrElse(true))
+					_resumeRepository.Save(grabbedResume);
+			}
 		}
 
 		private readonly IResumeRepository _resumeRepository;

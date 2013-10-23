@@ -1,8 +1,12 @@
-﻿using System.Web.Http;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using EspleyTest.Grabber;
 using EspleyTest.Viewer.App_Start;
+using Microsoft.Practices.Unity;
 
 namespace EspleyTest.Viewer
 {
@@ -20,7 +24,11 @@ namespace EspleyTest.Viewer
 			RouteConfig.RegisterRoutes(RouteTable.Routes);
 			BundleConfig.RegisterBundles(BundleTable.Bundles);
 
-			Bootstrapper.Initialise();
+			var container = Bootstrapper.Initialise();
+			var importer = container.Resolve<Importer>();
+
+			var cts = new CancellationTokenSource();
+			Task.Factory.StartNew(() => importer.Start(cts.Token), cts.Token);
 		}
 	}
 }

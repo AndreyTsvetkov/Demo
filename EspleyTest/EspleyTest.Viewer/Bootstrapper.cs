@@ -1,5 +1,6 @@
 using System.Web.Mvc;
 using EspleyTest.Domain;
+using EspleyTest.Grabber;
 using EspleyTest.Storage;
 using Microsoft.Practices.Unity;
 using Unity.Mvc4;
@@ -33,6 +34,7 @@ namespace EspleyTest.Viewer
     public static void RegisterTypes(IUnityContainer container)
     {
 	    container.RegisterType<IResumeRepository, ResumeRepository>();
+	    container.RegisterType<IGrabber, Grabber.Grabber>();
     }
   }
 }

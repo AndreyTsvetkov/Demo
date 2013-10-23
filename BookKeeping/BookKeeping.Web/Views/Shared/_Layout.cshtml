@@ -1,0 +1,30 @@
+﻿@using System.Web.Optimization
+@{
+	Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="width=device-width" />
+	<title>@RenderSection("title")</title>
+	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+	@Scripts.Render("~/bundles/libs")
+	@Scripts.Render("~/bundles/app/scripts")
+	@Styles.Render("~/bundles/app/style")
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h3 class="text-muted">Expense Book</h3>
+		</div>
+		@RenderSection("AppZone")
+		<div class="footer">
+			<p>&copy; Demo Code // Andrey Tsvetkov 2013</p>
+		</div>
+	</div>
+	<!-- /container -->
+</body>
+</html>

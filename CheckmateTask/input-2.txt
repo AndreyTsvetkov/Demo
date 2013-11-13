@@ -1,0 +1,3 @@
+﻿4x4
+Rook:2
+Knight:4

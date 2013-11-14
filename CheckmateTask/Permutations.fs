@@ -1,0 +1,55 @@
+﻿module CheckmateTask.Permutations
+open System
+
+let generatePermutations (set:int list) : seq<int list> = 
+    let minimalPermutation = List.sort set
+
+    let findLastIndex (cond: 'a -> bool) list = 
+        let rec findLastIndex' condition list currentIndex earlierFoundIndexAndValue = 
+            match list with
+            | [] -> earlierFoundIndexAndValue
+            | item :: otherItems -> 
+                let newlyFoundIndexAndValue = if cond item then Some (currentIndex, item) else earlierFoundIndexAndValue
+                findLastIndex' condition otherItems (currentIndex + 1) newlyFoundIndexAndValue
+
+        findLastIndex' cond list 0 None
+
+    let findLastIndex2 (cond: 'a -> 'a -> bool) list = 
+        let rec findLastIndex2' condition list currentIndex earlierFoundIndexAndValues = 
+            match list with
+            | [] -> earlierFoundIndexAndValues
+            | [_] -> earlierFoundIndexAndValues
+            | item :: (nextItem :: otherItems) -> 
+                let newlyFoundIndex = if cond item nextItem then Some (currentIndex, item, nextItem) else earlierFoundIndexAndValues
+                findLastIndex2' condition (nextItem :: otherItems) (currentIndex + 1) newlyFoundIndex
+
+        findLastIndex2' cond list 0 None
+
+    let next (somePermutation: int list) : int list option = 
+        match findLastIndex2 (fun item nextItem -> item < nextItem) somePermutation with
+        | None -> None
+        | Some (k, kItem, kNextItem) -> 
+            match findLastIndex (fun item -> item > kItem) somePermutation with 
+            | None -> None
+            | Some (i, iItem) -> 
+                // i can be k + 1 or more
+                Some [
+                    yield! somePermutation |> Seq.take k
+                    yield iItem
+                    yield! [
+                        yield! somePermutation |> Seq.skip (k + 1) |> Seq.take (i - k - 1)
+                        yield kItem
+                        yield! somePermutation |> Seq.skip (i + 1)
+                    ] |> List.rev
+                ]
+
+
+    let rec generate somePermutation = seq {
+        yield somePermutation
+        match next somePermutation with
+        | Some p -> 
+            yield! generate p
+        | _ -> yield! []
+    }
+
+    generate minimalPermutation

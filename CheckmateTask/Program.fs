@@ -23,17 +23,19 @@ type Figure =
     | Bishop
     | Rook
     | Knight
+    member x.CanAttackFrom (my:Position) (target:Position) = 
+        if my = target then false 
+        else
+            match x with 
+            | King -> my.IsNeighbourTo target
+            | Queen -> my.IsSameStraightLineWith target || my.IsSameDiagonalLineWith target
+            | Bishop -> my.IsSameDiagonalLineWith target
+            | Rook -> my.IsSameStraightLineWith target
+            | Knight ->
+                let absoluteDelta = my.GetAbsoluteDeltaTo target
+                absoluteDelta = (2, 1) || absoluteDelta = (1, 2)
     override x.ToString() = SerializationHelpers.toString x
     static member fromString s = SerializationHelpers.fromString<Figure> s
-    member x.CanAttackFrom (my:Position) (target:Position) = 
-        match x with 
-        | King -> my.IsNeighbourTo target
-        | Queen -> my.IsSameStraightLineWith target || my.IsSameDiagonalLineWith target
-        | Bishop -> my.IsSameDiagonalLineWith target
-        | Rook -> my.IsSameStraightLineWith target
-        | Knight ->
-            let absoluteDelta = my.GetAbsoluteDeltaTo target
-            absoluteDelta = (2, 1) || absoluteDelta = (1, 2)
 
 and Population = Map<Figure, int>
 
@@ -66,27 +68,38 @@ let readBoard fileName =
     
     (boardSize, figures)
 
+exception TooManyFigures
+
 let countPeacefulLayouts boardSize (population:Population) =
-    let field = [for x in [1..boardSize.Width] do for y in [1..boardSize.Height] -> { X = x; Y = y }]
-    let flattenedPopulation = [for pair in population do yield! Seq.init pair.Value (fun _ -> pair.Key)]
-    let placements = [for figure in flattenedPopulation do yield (figure, [for position in field -> { Figure = figure; Position = position }])]
+    let cellsCount = boardSize.Height * boardSize.Width
+    let figuresCount = population |> (0 |> Map.fold (fun acc key value -> acc + value))
+    let freeCellsCount = cellsCount - figuresCount
     
+    if freeCellsCount < 0 then raise TooManyFigures
+
+    let field = [for x in [1..boardSize.Width] do for y in [1..boardSize.Height] -> { X = x; Y = y }]
+
+    let isPeaceful (layout:Layout) = 
+        seq { for placement1 in layout do for placement2 in layout -> placement1.CanAttack placement2}
+        |> Seq.forall (fun canAttack -> canAttack = false)
+        
     let layouts =
-        let branchLayoutsForFigure (initialLayouts: Layout list) (oneMoreFigurePlacements: Figure * Placement list) = [
-            for layout in initialLayouts do
-                for placement in snd oneMoreFigurePlacements do
-                    if isFree placement.Position layout && placement.IsSafeWith layout then 
-                        yield placement :: layout
+        let codeForFreeCell _ = 0
+        let codeForFigure figure _ = match figure with | King -> 1 | Queen -> 2 | Bishop -> 3 | Rook -> 4 | Knight -> 5
+        let permutationList = [ 
+            yield! List.init freeCellsCount codeForFreeCell 
+            yield! [for pair in population do yield! List.init pair.Value (codeForFigure pair.Key)]
         ]
 
-        let initialLayouts = [for placement in snd (placements |> Seq.nth 0) -> [placement]]
-        Seq.fold branchLayoutsForFigure initialLayouts (placements |> Seq.skip 1)
-            |> List.map (fun layout -> 
-                layout |> List.sortBy (fun placement -> placement.Figure, placement.Position.X, placement.Position.Y))
-                               
+        let figureForCode code : Figure option = match code with | 1 -> Some King | 2 -> Some Queen | 3 -> Some Bishop | 4 -> Some Rook | 5 -> Some Knight | _ -> None
+        seq {
+            for layout in Permutations.generatePermutations permutationList 
+                |> Seq.map (List.map figureForCode >> List.zip field >> List.collect (fun (p, f) -> if f.IsSome then [{ Figure = f.Value; Position = p }] else [])) do 
+                if isPeaceful layout then 
+                    yield layout
+        }
 
-    let equal l1 l2 = Seq.compareWith (fun p1 p2 -> if p1 = p2 then 0 else -1) l1 l2 = 0
-    Seq.fold (fun agg item -> if not (Seq.exists (equal item) agg) then item :: agg else agg) [] layouts
+    layouts
         |> Seq.map (fun layout -> ignore(Console.WriteLine(layout)); layout)
         |> Seq.length        
 

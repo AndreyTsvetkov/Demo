@@ -55,7 +55,7 @@ let generatePermutations (set:int list) : seq<int list> =
     generate minimalPermutation
 
 // 
-let generatePermutationsImperative (set: int list) : seq<int array> = 
+let generatePermutationsImperative (set: int list) : seq<int array*int> = 
     let workingArray = set |> List.sort |> Seq.toArray
 
     let findBackwise cond (array:'a array) =
@@ -72,11 +72,13 @@ let generatePermutationsImperative (set: int list) : seq<int array> =
 
     seq {
         let stop = ref false
+        let lastK = ref 0
         while not !stop do 
-            yield workingArray
+            yield (workingArray, !lastK)
             match findLastIndex2 (fun item nextItem -> item < nextItem) workingArray with
             | None -> stop := true
             | Some k -> 
+                lastK := k
                 match findLastIndex (fun item -> item > workingArray.[k]) workingArray with 
                 | None -> stop := true
                 | Some i -> 

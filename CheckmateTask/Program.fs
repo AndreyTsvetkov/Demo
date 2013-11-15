@@ -76,9 +76,27 @@ let countPeacefulLayouts boardSize (population:Population) =
 
     let field = [|for x in [1..boardSize.Width] do for y in [1..boardSize.Height] -> { X = x; Y = y }|]
 
-    let isPeaceful (layout:Placement array) = 
-        seq { for placement1 in layout do for placement2 in layout -> placement1.CanAttack placement2}
-        |> Seq.forall (fun canAttack -> not canAttack) 
+    let isPeaceful (layout:(Placement*bool) array) previousResult = 
+        let (changed, unchanged) = layout |> Array.partition (fun (placement, changed) -> changed)
+        let changedPartResult = (seq { 
+                for (placement1, _) in changed do 
+                    for (placement2, _) in changed do
+                        yield placement1.CanAttack placement2 
+                for (placement1, _) in changed do 
+                    for (placement2, _) in unchanged do 
+                        yield placement1.CanAttack placement2 
+                        yield placement2.CanAttack placement1
+            } |> Seq.forall (fun canAttack -> not canAttack)
+        )
+        let unchangedPartResult = lazy (seq { 
+                for (placement1, _) in unchanged do 
+                    for (placement2, _) in unchanged do
+                        yield placement1.CanAttack placement2 
+            } |> Seq.forall (fun canAttack -> not canAttack)
+        )
+        if previousResult || previousResult = changedPartResult 
+            then changedPartResult 
+            else unchangedPartResult.Value
         
     let layouts =
         let codeForFreeCell _ = 0
@@ -90,11 +108,17 @@ let countPeacefulLayouts boardSize (population:Population) =
 
         let figureForCode code = match code with | 1 -> Some King | 2 -> Some Queen | 3 -> Some Bishop | 4 -> Some Rook | 5 -> Some Knight | _ -> None
         seq {
-            let filterAndWrap wrap (pos, optionFig) = match optionFig with | Some fig -> [| wrap fig pos |] | None -> [||]
-            for layout in Permutations.generatePermutationsImperative permutationList 
-                |> Seq.map (Array.map figureForCode >> Array.zip field >> Array.collect (filterAndWrap (fun f p -> { Figure = f; Position = p }))) do 
-                if isPeaceful layout then 
+            let filterAndWrap wrap (pos, index, optionFig) = match optionFig with | Some fig -> [| wrap fig pos index |] | None -> [||]
+            let lastResult = ref true
+            let indices = [|0..permutationList.Length-1|]
+            for (permutation, changedFromIndex) in Permutations.generatePermutationsImperative permutationList do
+                let layout = permutation |> Array.map figureForCode 
+                                         |> Array.zip3 field indices 
+                                         |> Array.collect (filterAndWrap (fun f p i -> ({ Figure = f; Position = p }, i >= changedFromIndex)))
+                lastResult := isPeaceful layout !lastResult
+                if !lastResult then 
                     yield layout
+
         }
 
     layouts

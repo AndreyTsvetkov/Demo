@@ -91,3 +91,64 @@ let generatePermutationsImperative (set: int list) : seq<int array*int> =
                     for j = 0 to (restEnd - restStart + 1) / 2 - 1 do 
                         swap workingArray (restStart + j) (restEnd - j)
     }
+
+let getNext (array: int array) (breakOn: int option) = 
+    let findBackwise cond (array:'a array) =
+        let rec findBackwise' cond array i =
+            if cond array i then Some i
+            elif i = 0 then None
+            else findBackwise' cond array (i - 1)
+        findBackwise' cond array (array.Length - 1)
+
+    let findLastIndex (cond: 'a -> bool) array = 
+        findBackwise (fun array index -> cond array.[index]) array
+    let findLastIndex2 (cond: 'a -> 'a -> bool) array = 
+        findBackwise (fun array index -> index < (array.Length - 1) && cond array.[index] array.[index + 1]) array
+
+    let getNextSequential array = 
+        match findLastIndex2 (fun item nextItem -> item < nextItem) array with
+        | None -> (None, 0)
+        | Some k -> 
+            match findLastIndex (fun item -> item > array.[k]) array with 
+            | None -> (None, 0)
+            | Some i -> 
+                // i can be k + 1 or more
+                let swap (array: 'a array) i j = 
+                    let temp = array.[i]
+                    array.[i] <- array.[j]; array.[j] <- temp;
+                swap array i k
+                let (restStart, restEnd) = (k + 1, array.Length - 1)
+                for j = 0 to (restEnd - restStart + 1) / 2 - 1 do 
+                    swap array (restStart + j) (restEnd - j)
+                (Some array, k)
+
+    let write array = Console.WriteLine((array |> Array.fold (fun acc i -> acc + i.ToString()) ""))
+    match breakOn with 
+    | Some breakIndex -> 
+        let breakItem = array.[breakIndex]
+        let rest = array |> Seq.skip breakIndex
+        match rest |> Seq.filter (fun i -> i > breakItem) |> Seq.toArray with 
+        | [| |] -> getNextSequential array
+        | replacements -> 
+            let replacement = replacements |> Array.min
+            let res = (
+                Some [| 
+                    for i = 0 to breakIndex - 1 do 
+                        yield array.[i]
+                    yield replacement
+                    yield! (seq {
+                        let once = ref true
+                        for i = breakIndex + 1 to array.Length - 1 do 
+                            if !once && array.[i] = replacement then 
+                                once := false
+                                yield breakItem
+                            else 
+                                yield array.[i]
+                    }) |> Seq.sort
+                |], 
+                breakIndex
+            )
+            res
+    | None -> 
+        write array
+        getNextSequential array

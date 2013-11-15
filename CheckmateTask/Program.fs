@@ -20,6 +20,7 @@ type Position = { X: int; Y: int } with
     override x.ToString() = String.Format("{0},{1}", x.X, x.Y)
 
 type Figure = 
+    | Empty
     | King
     | Queen
     | Bishop
@@ -29,6 +30,7 @@ type Figure =
         if my = target then false 
         else
             match x with 
+            | Empty -> false
             | King -> my.IsNeighbourTo target
             | Queen -> my.IsSameStraightLineWith target || my.IsSameDiagonalLineWith target
             | Bishop -> my.IsSameDiagonalLineWith target
@@ -67,6 +69,14 @@ let readBoard fileName =
 
 exception TooManyFigures
 
+let walkAllPairsFromStart (array:'a array) startOneSeq startOtherSeq endSeq = seq {
+    for i = startOneSeq to startOtherSeq - 1 do 
+        yield (array.[i], array.[startOtherSeq], startOtherSeq)
+    for t = startOtherSeq+1 to endSeq do 
+        for i = startOneSeq to t-1 do 
+            yield (array.[i], array.[t], t)
+}
+
 let countPeacefulLayouts boardSize (population:Population) =
     let cellsCount = boardSize.Height * boardSize.Width
     let figuresCount = population |> (0 |> Map.fold (fun acc key value -> acc + value))
@@ -76,53 +86,89 @@ let countPeacefulLayouts boardSize (population:Population) =
 
     let field = [|for x in [1..boardSize.Width] do for y in [1..boardSize.Height] -> { X = x; Y = y }|]
 
-    let isPeaceful (layout:(Placement*bool) array) previousResult = 
-        let (changed, unchanged) = layout |> Array.partition (fun (placement, changed) -> changed)
-        let changedPartResult = (seq { 
-                for (placement1, _) in changed do 
-                    for (placement2, _) in changed do
-                        yield placement1.CanAttack placement2 
-                for (placement1, _) in changed do 
-                    for (placement2, _) in unchanged do 
-                        yield placement1.CanAttack placement2 
-                        yield placement2.CanAttack placement1
-            } |> Seq.forall (fun canAttack -> not canAttack)
-        )
-        let unchangedPartResult = lazy (seq { 
-                for (placement1, _) in unchanged do 
-                    for (placement2, _) in unchanged do
-                        yield placement1.CanAttack placement2 
-            } |> Seq.forall (fun canAttack -> not canAttack)
-        )
-        if previousResult || previousResult = changedPartResult 
-            then changedPartResult 
-            else unchangedPartResult.Value
+    let isPeaceful (layout:(Placement*int) array) previousIsPeaceful changedFromIndex =
+        let findCollisions startOneSeq startOtherSeq endSeq = 
+            walkAllPairsFromStart layout startOneSeq startOtherSeq endSeq
+            |> Seq.collect (fun ((first, _), (second, _), secondIndex) -> [(first.CanAttack second, secondIndex); (second.CanAttack first, secondIndex)])
+            
+        let changedPairs = findCollisions 0 changedFromIndex (layout.Length - 1) 
+        let unchangedPairs = findCollisions 0 0 (changedFromIndex - 1) 
+
+        let changedPairsResult = changedPairs |> Seq.tryFind (fun (canAttack, secondIndex) -> canAttack)
+        let changedPairsArePeacful = changedPairsResult.IsNone
+        let unchangedPairsResult = lazy (unchangedPairs |> Seq.tryFind (fun (canAttack, secondIndex) -> canAttack))
+        let unchangedPairsArePeacful = lazy unchangedPairsResult.Value.IsNone
+
+        if previousIsPeaceful then 
+            if changedPairsArePeacful then 
+                (true, None)
+            else
+                (false, Some (snd changedPairsResult.Value))
+        else
+            if changedPairsArePeacful then 
+                if unchangedPairsArePeacful.Value then 
+                    (true, None)
+                else 
+                    (false, Some (snd unchangedPairsResult.Value.Value))
+            else
+                if unchangedPairsArePeacful.Value then 
+                    (false, Some (snd changedPairsResult.Value))
+                else 
+                    (false, Some (min (snd changedPairsResult.Value) (snd unchangedPairsResult.Value.Value)))
         
     let layouts =
         let codeForFreeCell _ = 0
-        let codeForFigure figure _ = match figure with | King -> 1 | Queen -> 2 | Bishop -> 3 | Rook -> 4 | Knight -> 5
-        let permutationList = [ 
-            yield! List.init freeCellsCount codeForFreeCell 
-            yield! [for pair in population do yield! List.init pair.Value (codeForFigure pair.Key)]
-        ]
+        let codeForFigure figure _ = match figure with | King -> 1 | Queen -> 2 | Bishop -> 3 | Rook -> 4 | Knight -> 5 | Empty -> 0
+        let initialPermutation = 
+            [| 
+                yield! List.init freeCellsCount codeForFreeCell 
+                yield! [for pair in population do yield! List.init pair.Value (codeForFigure pair.Key)]
+            |] |> Array.sort
+        let indices = [|0..initialPermutation.Length-1|]
 
         let figureForCode code = match code with | 1 -> Some King | 2 -> Some Queen | 3 -> Some Bishop | 4 -> Some Rook | 5 -> Some Knight | _ -> None
-        seq {
-            let filterAndWrap wrap (pos, index, optionFig) = match optionFig with | Some fig -> [| wrap fig pos index |] | None -> [||]
-            let lastResult = ref true
-            let indices = [|0..permutationList.Length-1|]
-            for (permutation, changedFromIndex) in Permutations.generatePermutationsImperative permutationList do
-                let layout = permutation |> Array.map figureForCode 
-                                         |> Array.zip3 field indices 
-                                         |> Array.collect (filterAndWrap (fun f p i -> ({ Figure = f; Position = p }, i >= changedFromIndex)))
-                lastResult := isPeaceful layout !lastResult
-                if !lastResult then 
-                    yield layout
+        let filterAndWrap wrap (pos, index, optionFig) = match optionFig with | Some fig -> [| wrap fig pos index |] | None -> [||]
 
-        }
+        let step permutation changedFromCellIndex lastResult =
+            let layout = permutation |> Array.map figureForCode 
+                                     |> Array.zip3 field indices 
+                                     |> Array.collect (filterAndWrap (fun f p i -> ({ Figure = f; Position = p }, i)))
+            let orElse fallback opt = match opt with | Some v -> v | None -> fallback
+            let changedFigureIndex = (layout |> Seq.tryFindIndex (fun (placement, cellIndex) -> cellIndex = changedFromCellIndex)) |> orElse 0
+            let (peace, brokeOnFigureIndex) = isPeaceful layout lastResult changedFigureIndex
+            let brokeOnCellIndex = match brokeOnFigureIndex with | Some figureIndex -> Some (snd layout.[figureIndex]) | None -> None
+
+            let (maybeNextPermutation, nextChangedFromCellIndex) = Permutations.getNext permutation brokeOnCellIndex
+            (if peace then Some layout else None), peace, maybeNextPermutation, nextChangedFromCellIndex
+
+        let rec loop permutation changedCellIndex lastPeace = seq {
+                let maybeLayout, peace, maybeNextPermutation, nextChangedFromCellIndex = step permutation changedCellIndex lastPeace
+                if maybeLayout.IsSome then yield maybeLayout.Value
+                match maybeNextPermutation with 
+                | None -> yield! Seq.empty
+                | Some next -> yield! loop next nextChangedFromCellIndex peace
+            }
+        loop initialPermutation 0 false
+
+//        seq {
+//
+//            let stop = ref false
+//            let permutation = ref initialPermutation
+//            let changedCellIndex = ref 0
+//            let lastPeace = ref false
+//            while not !stop do 
+//                let maybeLayout, peace, maybeNextPermutation, nextChangedFromCellIndex = step !permutation !changedCellIndex !lastPeace
+//                if (maybeLayout.IsSome) then yield maybeLayout.Value
+//                match maybeNextPermutation with 
+//                | Some p ->
+//                    permutation := p
+//                    changedCellIndex := nextChangedFromCellIndex
+//                    lastPeace := peace
+//                | None -> stop := true
+//        }
 
     layouts
-        |> Seq.map (fun layout -> ignore(Console.WriteLine(layout |> Seq.toList)); layout)
+      //  |> Seq.map (fun layout -> ignore(Console.WriteLine(layout |> Seq.toList)); layout)
         |> Seq.length        
 
 [<EntryPoint>]

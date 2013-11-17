@@ -1,0 +1,6 @@
+6x9
+King:2
+Queen:1
+Bishop:1
+Rook:1
+Knight:1

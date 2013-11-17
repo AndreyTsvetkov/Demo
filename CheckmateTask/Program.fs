@@ -7,16 +7,10 @@ open System.Linq
 
 type BoardSize = { Width: int; Height: int}
 type Position = { X: int; Y: int } with 
-    member x.IsNeighbourTo (other:Position) = 
-        let (deltaX, deltaY) = x.GetAbsoluteDeltaTo other
-        deltaX <= 1 && deltaY <= 1
+    member x.IsNeighbourTo (other:Position) = match x.GetAbsoluteDeltaTo other with | (dX, dY) -> dX <= 1 && dY <= 1
     member x.IsSameStraightLineWith (other:Position) = x.X = other.X || x.Y = other.Y 
-    member x.IsSameDiagonalLineWith (other:Position) =
-        let (deltaX, deltaY) = x.GetAbsoluteDeltaTo other
-        deltaX = deltaY
-    member x.GetAbsoluteDeltaTo (other:Position) = 
-        let abs x = if x > 0 then x else -x
-        (abs (x.X - other.X), abs (x.Y - other.Y))
+    member x.IsSameDiagonalLineWith (other:Position) = match x.GetAbsoluteDeltaTo other with | (dX, dY) -> dX = dY
+    member x.GetAbsoluteDeltaTo (other:Position) = (Math.Abs (x.X - other.X), Math.Abs (x.Y - other.Y))
     override x.ToString() = String.Format("{0},{1}", x.X, x.Y)
 
 type Figure = 
@@ -150,26 +144,7 @@ let countPeacefulLayouts boardSize (population:Population) =
             }
         loop initialPermutation 0 false
 
-//        seq {
-//
-//            let stop = ref false
-//            let permutation = ref initialPermutation
-//            let changedCellIndex = ref 0
-//            let lastPeace = ref false
-//            while not !stop do 
-//                let maybeLayout, peace, maybeNextPermutation, nextChangedFromCellIndex = step !permutation !changedCellIndex !lastPeace
-//                if (maybeLayout.IsSome) then yield maybeLayout.Value
-//                match maybeNextPermutation with 
-//                | Some p ->
-//                    permutation := p
-//                    changedCellIndex := nextChangedFromCellIndex
-//                    lastPeace := peace
-//                | None -> stop := true
-//        }
-
-    layouts
-      //  |> Seq.map (fun layout -> ignore(Console.WriteLine(layout |> Seq.toList)); layout)
-        |> Seq.length        
+    layouts |> Seq.length        
 
 [<EntryPoint>]
 let main argv = 

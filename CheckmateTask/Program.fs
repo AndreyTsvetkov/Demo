@@ -63,6 +63,10 @@ let readBoard fileName =
 
 exception TooManyFigures
 
+// in 'a b c d e f' where startOne points at 'a', startOther - at 'd' and end at 'f', 
+// walks pairs as such: ad bd cd (← so, only with 'd'; and from now for all →)  ae be ce de af bf cf df
+// so, ab ac bc pairs were skipped. 
+// it is useful if we know that the head of our sequence is unchanged and it's no use to recheck pairs from the head
 let walkAllPairsFromStart (array:'a array) startOneSeq startOtherSeq endSeq = seq {
     for i = startOneSeq to startOtherSeq - 1 do 
         yield (array.[i], array.[startOtherSeq], startOtherSeq)
@@ -86,11 +90,11 @@ let countPeacefulLayouts boardSize (population:Population) =
             |> Seq.collect (fun ((first, _), (second, _), secondIndex) -> [(first.CanAttack second, secondIndex); (second.CanAttack first, secondIndex)])
             
         let changedPairs = findCollisions 0 changedFromIndex (layout.Length - 1) 
-        let unchangedPairs = findCollisions 0 0 (changedFromIndex - 1) 
+        let unchangedPairs = lazy (findCollisions 0 0 (changedFromIndex - 1))
 
         let changedPairsResult = changedPairs |> Seq.tryFind (fun (canAttack, secondIndex) -> canAttack)
         let changedPairsArePeacful = changedPairsResult.IsNone
-        let unchangedPairsResult = lazy (unchangedPairs |> Seq.tryFind (fun (canAttack, secondIndex) -> canAttack))
+        let unchangedPairsResult = lazy (unchangedPairs.Value |> Seq.tryFind (fun (canAttack, secondIndex) -> canAttack))
         let unchangedPairsArePeacful = lazy unchangedPairsResult.Value.IsNone
 
         if previousIsPeaceful then 
